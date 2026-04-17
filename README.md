@@ -7,7 +7,7 @@ The exploratory data analysis of the Drug Consumption dataset concludes with the
 
 1. **No missing values** — the mandatory survey design ensured completeness across all 1,884 rows and 31 features.
 
-2. **Sample characteristics** — nearly gender-balanced (943 male, 941 female), skewed toward younger respondents (643 in the 18–24 group), and dominated by UK participants (1,043 out of 1,884). ![[results/gender-age-country.png]]
+2. **Sample characteristics** — nearly gender-balanced (943 male, 941 female), skewed toward younger respondents (643 in the 18–24 group), and dominated by UK participants (1,043 out of 1,884). ![results/gender-age-country.png]
 
 3. **Personality scores** are approximately normally distributed and centred near zero (mean ≈ 0, std ≈ 1), consistent with their z-score standardisation. Mean and median are nearly identical for all scores, confirming approximate symmetry. ![[results/personality-scores.png]]
 
