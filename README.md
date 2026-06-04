@@ -3,7 +3,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.10-3776AB?style=for-the-badge&logo=python&logoColor=white"/>
   <img src="https://img.shields.io/badge/Jupyter-Notebook-F37626?style=for-the-badge&logo=jupyter&logoColor=white"/>
-  <img src="https://img.shields.io/badge/Status-Part%201%20Complete-4CAF50?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/Status-Part%202%20Complete-4CAF50?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Dataset-UCI%20ML%20Repository-0277BD?style=for-the-badge"/>
 </p>
 
@@ -20,7 +20,7 @@ This repository documents the complete data analysis of the **Drug Consumption**
 | Phase | Topic | Status |
 |:---:|---|:---:|
 | 1 | [Exploratory data analysis](#part-1---exploratory-data-analysis) | Complete |
-| 2 | [Classification](#part-2---classification) | Upcoming |
+| 2 | [Classification](#part-2---classification) | Complete |
 | 3 | [Regression](#part-3---regression) | Upcoming |
 
 ---
@@ -120,6 +120,89 @@ Two methods were applied: the **3-sigma rule** (Definition 5.1.1) and the **IQR 
 
 ## Part 2 - Classification
 
+Building on the EDA hypothesis that personality traits predict substance exposure, this phase formalises a binary prediction task and contrasts two classifiers: **Decision Tree** and **k-Nearest Neighbour**.
+
+---
+
+### Classification Task
+
+The target variable is constructed by binarising the Cannabis column at the `CL0` boundary:
+
+- **Class 0 - Non-user**: respondents reporting `CL0` (never used Cannabis).
+- **Class 1 - User**: respondents reporting any of `CL1`-`CL6` (used at least once).
+
+| Class | Count | Proportion |
+|---|---:|---:|
+| Non-user (0) | 412 | 21.9% |
+| User (1) | 1,472 | 78.1% |
+
+The target classes are moderately imbalanced, motivating the use of weighted F1 alongside accuracy and **stratified** k-fold cross-validation.
+
+---
+
+### Methodology
+
+**Predictors:** 7 personality z-scores + 5 demographic features (2 ordinal-encoded, 3 one-hot), yielding a 25-column feature matrix. All drug columns are excluded to prevent data leakage.
+
+**Preprocessing:** ordinal integer encoding for Age and Education; one-hot dummies for Gender, Country, and Ethnicity; Min-Max scaling of the full feature matrix for kNN (invariant for the Decision Tree).
+
+**Validation:** Stratified 5-fold cross-validation (`random_state=42`); hyperparameters tuned by maximising mean weighted F1 across folds.
+
+---
+
+### Cross-Validation Results
+
+
+<p align="center">
+  <img src="results/model-comparison.png" width="780" alt="Outlier detection boxplots"/>
+</p>
+<p align="center"><em>Figure 6 - Model comparison of accuracy & F1-score between Decision Tree & kNN.</em></p>
+
+| Classifier | Tuned parameter | Accuracy | Weighted F1 |
+|---|:---:|---:|---:|
+| Decision Tree (`criterion=entropy`) | `max_depth = 8` | 0.7712 ± 0.0155 | 0.7697 ± 0.0133 |
+| k-Nearest Neighbour (*Euclidean*) | `k = 7` | 0.8041 ± 0.0123 | 0.7935 ± 0.0143 |
+
+> A majority-class baseline would yield 78.1% accuracy. The Decision Tree sits close to this ceiling; kNN clears it by ~2.6%. Both models identify *users* well (recall ≈ 86 - 91%) but struggle on the minority *non-user* class (recall ≈ 43 - 47%).
+
+---
+
+### Feature Importance
+
+Two complementary methods are applied: **impurity-based importance** (Decision Tree) and **permutation importance** (kNN, 10 repeats, drop in weighted F1).
+
+<p align="center">
+  <img src="results/features-comparison.png" width="780" alt="Outlier detection boxplots"/>
+</p>
+<p align="center"><em>Figure 7 - Feature importance comparison between Decision Tree & kNN.</em></p>
+
+| Rank | Decision Tree - impurity reduction | kNN - permutation drop in F1 |
+|:---:|---|---|
+| 1 | Country_UK (0.2526) | SS - Sensation Seeking (0.0388) |
+| 2 | SS - Sensation Seeking (0.1513) | Age_ord (0.0201) |
+| 3 | Cscore - Conscientiousness (0.1054) | Oscore - Openness (0.0186) |
+
+The class-conditional means of the top personality features confirm real but modest effect sizes:
+
+| Feature | Non-users | Users | Difference |
+|---|---:|---:|---:|
+| SS (Sensation Seeking) | -0.652 | +0.179 | +0.831 |
+| Oscore (Openness) | -0.579 | +0.162 | +0.741 |
+| Age_ord | 1.981 | 1.168 | -0.813 |
+| Cscore (Conscientiousness) | +0.451 | -0.127 | -0.577 |
+
+---
+
+### Key Findings Summary
+
+| # | Finding |
+|:---:|---|
+| 1 | **kNN outperforms the Decision Tree**: 80.4% vs 77.1% accuracy; 0.7935 vs 0.7697 weighted F1 under 5-fold CV |
+| 2 | **Sensation Seeking is the strongest and most reliable predictor**: top-ranked by kNN permutation importance and second by the Decision Tree |
+| 3 | **Country_UK distorts tree splits**: the Decision Tree places it first due to sample over-representation (55% UK), not a causal mechanism |
+| 4 | **Minority class recall is the key limitation**: non-user recall of 43 - 47% reflects the 76/24 class imbalance and the modest effect sizes of personality predictors (~0.6 - 0.8 SD difference) |
+| 5 | **EDA hypothesis partially confirmed**: Sensation Seeking, Openness, and younger age are associated with Cannabis use, but effect sizes are insufficient to override the class prior for borderline profiles |
+
 ---
 
 ## Part 3 - Regression
@@ -132,15 +215,18 @@ Two methods were applied: the **3-sigma rule** (Definition 5.1.1) and the **IQR 
 drug-consumption-analysis/
 │
 ├── explorative-data-analysis/
-│   ├── EDA_Drug_Consumption.ipynb       # Jupyter Notebook - Part 1
-│   ├── explorative-data-analysis.pdf    # Documentation - Part 1
+│   ├── EDAnotebook.ipynb                # Jupyter Notebook - Part 1
+│   └── explorative-data-analysis.pdf    # Documentation - Part 1
+│
+├── classification/
+│   ├── classification-notebook.ipynb    # Jupyter Notebook - Part 2
+│   └── classification.pdf               # Documentation - Part 2
 │
 ├── results/
-│   └── ...
-│   
+│   └── *.png                            # Output figures
 │
+├── .gitignore
 ├── Drug_Consumption.csv                 # Dataset
-├── ProjectWork_Assessment.pdf           # Assignment brief
 └── README.md
 ```
 
@@ -153,9 +239,13 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
-from statistics import mode
-from tabulate import tabulate
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler
+from sklearn.model_selection import StratifiedKFold, cross_val_score, cross_val_predict
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report
+from sklearn import tree
+from sklearn.neighbors import KNeighborsClassifier, NearestNeighbors
+from sklearn.inspection import permutation_importance
+from IPython.display import display, Markdown
 ```
 
 ---
