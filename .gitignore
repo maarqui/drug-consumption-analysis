@@ -2,7 +2,8 @@
 # PROJECT-SPECIFIC EXCLUSIONS
 # =============================================================================
 ProjectWork_Assessment.pdf
-assessment.md
+*.md
+!README.md
 
 # =============================================================================
 # PYTHON
@@ -40,19 +41,6 @@ venv/
 env/
 ENV/
 .conda/
-
-
-# =============================================================================
-# DATA & MODEL ARTIFACTS
-# =============================================================================
-# Large / binary data formats — commit only small raw CSVs intentionally
-*.parquet
-*.h5
-*.hdf5
-*.pkl
-*.pickle
-*.joblib
-
 
 # =============================================================================
 # ENVIRONMENT & SECRETS
